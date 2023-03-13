@@ -21,12 +21,6 @@
     <ClCompile Include="hellotriangle.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="shaderTest.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="Shader.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="records.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -40,6 +34,15 @@
     </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Model.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="camera.h">
+      <Filter>源文件</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -71,6 +74,30 @@
       <Filter>源文件</Filter>
     </None>
     <None Include="light_cube.fs">
+      <Filter>源文件</Filter>
+    </None>
+    <None Include="model_loading.vs">
+      <Filter>源文件</Filter>
+    </None>
+    <None Include="model_loading.fs">
+      <Filter>源文件</Filter>
+    </None>
+    <None Include="box.fs">
+      <Filter>源文件</Filter>
+    </None>
+    <None Include="box.vs">
+      <Filter>源文件</Filter>
+    </None>
+    <None Include="1.1.depth_testing.vs">
+      <Filter>源文件</Filter>
+    </None>
+    <None Include="1.1.depth_testing.fs">
+      <Filter>源文件</Filter>
+    </None>
+    <None Include="framebuffer.vs">
+      <Filter>源文件</Filter>
+    </None>
+    <None Include="framebuffer.fs">
       <Filter>源文件</Filter>
     </None>
   </ItemGroup>

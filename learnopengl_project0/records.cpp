@@ -1947,8 +1947,302 @@ int main()
 }
 */ 
 
+//15. post process with frame buffer
+/*
+int main()
+{
+	// glfw: initialize and configure
+	// ------------------------------
+	glfwInit();
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-//15. sucess version of nanosuit, full text not just main()
+#ifdef __APPLE__
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
+
+	// glfw window creation
+	// --------------------
+	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+	if (window == NULL)
+	{
+		std::cout << "Failed to create GLFW window" << std::endl;
+		glfwTerminate();
+		return -1;
+	}
+	glfwMakeContextCurrent(window);
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetScrollCallback(window, scroll_callback);
+
+	// tell GLFW to capture our mouse
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+	// glad: load all OpenGL function pointers
+	// ---------------------------------------
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	{
+		std::cout << "Failed to initialize GLAD" << std::endl;
+		return -1;
+	}
+
+	// configure global opengl state
+	// -----------------------------
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+
+	// build and compile shaders
+	// -------------------------
+	Shader onePassShader("1.1.depth_testing.vs", "1.1.depth_testing.fs");
+
+	Shader twoPassShader("framebuffer.vs", "framebuffer.fs");
+
+	//这个程序的逻辑说明：我们先设定一个自定义的framebuffer，第一遍渲染我们不渲染到默认fbo，而是渲染给
+	//这个自定义的fbo，这样实际的渲染结果就存到了fbo texture attachment 当中
+	//然后我们再恢复默认fbo，再渲染一次，只不过这次shader程序只从上述长方形纹理当中两个三角形中取顶点绘制，
+	//二次渲染的fs内容就是从texture直接采样
+
+
+
+	// set up vertex data (and buffer(s)) and configure vertex attributes
+	// ------------------------------------------------------------------
+	float cubeVertices[] = {
+		// positions          // texture Coords
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+	};
+	float planeVertices[] = {
+		// positions          // texture Coords (note we set these higher than 1 (together with GL_REPEAT as texture wrapping mode). this will cause the floor texture to repeat)
+		 5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+		-5.0f, -0.5f,  5.0f,  0.0f, 0.0f,
+		-5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+
+		 5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+		-5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+		 5.0f, -0.5f, -5.0f,  2.0f, 2.0f
+	};
+	float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
+		// positions   // texCoords
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		-1.0f, -1.0f,  0.0f, 0.0f,
+		 1.0f, -1.0f,  1.0f, 0.0f,
+
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		 1.0f, -1.0f,  1.0f, 0.0f,
+		 1.0f,  1.0f,  1.0f, 1.0f
+	};
+	// cube VAO
+	onePassShader.use();
+	unsigned int cubeVAO, cubeVBO;
+	glGenVertexArrays(1, &cubeVAO);
+	glGenBuffers(1, &cubeVBO);
+	glBindVertexArray(cubeVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), &cubeVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glBindVertexArray(0);
+	// plane VAO
+	unsigned int planeVAO, planeVBO;
+	glGenVertexArrays(1, &planeVAO);
+	glGenBuffers(1, &planeVBO);
+	glBindVertexArray(planeVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), &planeVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glBindVertexArray(0);
+
+	unsigned int quaVAO, quaVBO;
+	glGenVertexArrays(1, &quaVAO);
+	glGenBuffers(1, &quaVBO);
+	glBindVertexArray(quaVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, quaVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+	glBindVertexArray(0);
+
+
+	// load textures
+
+	unsigned int cubeTexture = loadTexture("D:/Cgworkplace/learnopenGLsource/LearnOpenGL/resources/textures/container.jpg");
+	unsigned int floorTexture = loadTexture("D:/Cgworkplace/learnopenGLsource/LearnOpenGL/resources/textures/metal.png");
+
+	// shader configuration
+	// --------------------
+
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+	onePassShader.use();
+	onePassShader.setInt("texture1", 0);
+	twoPassShader.use();
+	twoPassShader.setInt("texturesamp", 0);
+
+	//generate frame buffer for depthmap
+	unsigned int fbo;
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+	unsigned int texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+
+	//一张和屏幕等大的纹理，目前任何数据，即纯黑
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	//自定义的framebuffer绑定了一个颜色缓冲
+	//如果要绑定深度缓冲，把GL_COLOR_ATTACHMENT0替换成GL_DEPTH_ATTACHMENT
+
+	unsigned int rbo;
+	glGenRenderbuffers(1, &rbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HEIGHT);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE) {
+		std::cout << "FrameBuffer Complete" << std::endl;
+	}
+	else {
+		std::cout << "Frame buffer not Complete" << std::endl;
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	//这个帧缓冲是我们自己定义的帧缓冲，应当要求其让位，免得占据了默认帧缓冲的绑定态，从而让最终屏幕画不出东西
+
+
+	// render loop
+	// -----------
+	while (!glfwWindowShouldClose(window))
+	{
+		// per-frame time logic
+		// --------------------
+		float currentFrame = static_cast<float>(glfwGetTime());
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
+		processInput(window);
+
+		// 1 pass render
+		// ------
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		onePassShader.use();
+
+		glEnable(GL_DEPTH_TEST);
+		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+
+		glm::mat4 model = glm::mat4(1.0f);
+		glm::mat4 view = camera.GetViewMatrix();
+		glm::mat4 projection = glm::perspective(45.0f, (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+		onePassShader.setMat4("view", view);
+		onePassShader.setMat4("projection", projection);
+		// cubes
+		glBindVertexArray(cubeVAO);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, cubeTexture);
+		model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
+		//model = glm::scale(model, glm::vec3(0.3f));
+		onePassShader.setMat4("model", model);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
+		//model = glm::scale(model, glm::vec3(0.3f));
+		onePassShader.setMat4("model", model);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		// floor
+		glBindVertexArray(planeVAO);
+		glBindTexture(GL_TEXTURE_2D, floorTexture);
+		onePassShader.setMat4("model", glm::mat4(1.0f));
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glBindVertexArray(0);
+
+
+		//2 pass render
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glDisable(GL_DEPTH_TEST);
+
+		twoPassShader.use();
+		float heaviness = 150 * (2 + 1.6 * sin(currentFrame));
+		twoPassShader.setFloat("heaviness", heaviness);
+		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glBindVertexArray(quaVAO);
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
+		// -------------------------------------------------------------------------------
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	}
+
+	// optional: de-allocate all resources once they've outlived their purpose:
+	// ------------------------------------------------------------------------
+	glDeleteVertexArrays(1, &cubeVAO);
+	glDeleteVertexArrays(1, &planeVAO);
+	glDeleteVertexArrays(1, &quaVAO);
+	glDeleteBuffers(1, &cubeVBO);
+	glDeleteBuffers(1, &planeVBO);
+	glDeleteBuffers(1, &quaVBO);
+
+	glfwTerminate();
+	return 0;
+}
+*/
+
+//16. sucess version of nanosuit, full text not just main()
 /*
 
 #include "Shader.h"
@@ -2489,4 +2783,237 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 	camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
 
+*/
+
+//17. shadowmap step 1, get depthmap, show depthmap on screen
+/*
+int main()
+{
+	// glfw: initialize and configure
+	// ------------------------------
+	glfwInit();
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+#ifdef __APPLE__
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
+
+	// glfw window creation
+	// --------------------
+	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+	if (window == NULL)
+	{
+		std::cout << "Failed to create GLFW window" << std::endl;
+		glfwTerminate();
+		return -1;
+	}
+	glfwMakeContextCurrent(window);
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetScrollCallback(window, scroll_callback);
+
+	// tell GLFW to capture our mouse
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+	// glad: load all OpenGL function pointers
+	// ---------------------------------------
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	{
+		std::cout << "Failed to initialize GLAD" << std::endl;
+		return -1;
+	}
+
+	// configure global opengl state
+	// -----------------------------
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+
+	// build and compile shaders
+	// -------------------------
+	Shader onePassShader("shadowmap1pass.vs", "shadowmap1pass.fs");
+	Shader showDepthMapShader("showdepthmapshader.vs", "showdepthmapshader.fs");
+	//Shader twoPassShader("shadowmap1pass.vs", "shadowmap1pass.fs");
+
+	//这个程序的逻辑说明：我们先设定一个自定义的framebuffer，第一遍渲染我们不渲染到默认fbo，而是渲染给
+	//这个自定义的fbo，这样实际的渲染结果就存到了fbo texture attachment 当中，这次渲染对应光源视角
+	//然后我们再恢复默认fbo，再渲染一次，
+	//二次渲染的fs内容就是从texture直接采样
+
+
+
+	// set up vertex data (and buffer(s)) and configure vertex attributes
+	// ------------------------------------------------------------------
+
+	onePassShader.use();
+
+
+	unsigned int planeVAO;
+	float planeVertices[] = {
+		// positions            // normals         // texcoords
+		 25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  25.0f,  0.0f,
+		-25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
+		-25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f,
+
+		 25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  25.0f,  0.0f,
+		-25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f,
+		 25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,  25.0f, 25.0f
+	};
+
+	// plane VAO
+	unsigned int cubeVAO = 0, cubeVBO = 0;
+	unsigned int planeVBO;
+	glGenVertexArrays(1, &planeVAO);
+	glGenBuffers(1, &planeVBO);
+	glBindVertexArray(planeVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glBindVertexArray(0);
+
+	unsigned int quadVAO;
+	unsigned int quadVBO;
+	float quadVertices[] = {
+		// positions        // texture Coords
+		-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+		-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+		 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+		 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+	};
+	// setup quad plane VAO
+	glGenVertexArrays(1, &quadVAO);
+	glGenBuffers(1, &quadVBO);
+	glBindVertexArray(quadVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+
+	glBindVertexArray(quadVAO);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glBindVertexArray(0);
+
+
+	// load textures
+	unsigned int woodTexture = loadTexture("D:/Cgworkplace/learnopenGLsource/LearnOpenGL/resources/textures/wood.png");
+	// shader configuration
+	// --------------------
+
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+	//onePassShader.use();
+	//onePassShader.setInt("texture1", 0);
+	//twoPassShader.use();
+	//twoPassShader.setInt("texturesamp", 0);
+
+	//generate frame buffer for depthmap
+	unsigned int depthMapfbo;
+	glGenFramebuffers(1, &depthMapfbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapfbo);
+
+	unsigned int depthMapTexture;
+	glGenTextures(1, &depthMapTexture);
+	glBindTexture(GL_TEXTURE_2D, depthMapTexture);
+	const GLuint SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;//一张1024*1024的shadowmap,未必需要和屏幕等大
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_WIDTH, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMapTexture, 0);
+	//自定义的framebuffer绑定了一个深度纹理depthmap
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	//一般，如果一个fbo没有绑定颜色缓冲，是无法通过完备性检测的，我们可以通过上面两句话告诉openGL这个fbo不必绑定颜色缓冲，因为我们本来就
+	//不打算往里面绘制颜色
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE) {
+		std::cout << "FrameBuffer Complete" << std::endl;
+	}
+	else {
+		std::cout << "Frame buffer not Complete" << std::endl;
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	//这个帧缓冲是我们自己定义的帧缓冲，应当要求其让位，免得占据了默认帧缓冲的绑定态，从而让最终屏幕画不出东西
+
+	glm::vec3 lightPos = glm::vec3(-2.0f, 4.0f, -1.0f);
+	glm::vec3 sceneCenter = glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+
+	float near = 1.0f, far = 7.5f;
+	glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near, far);
+	glm::mat4 lightview = glm::lookAt(lightPos, sceneCenter, up);
+	glm::mat4 lightVP = lightProjection * lightview;
+	// render loop
+	// -----------
+	while (!glfwWindowShouldClose(window))
+	{
+		// per-frame time logic
+		// --------------------
+		float currentFrame = static_cast<float>(glfwGetTime());
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
+		processInput(window);
+
+		// 1 pass render: write to depth map
+		// ------
+		glBindFramebuffer(GL_FRAMEBUFFER, depthMapfbo);
+		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, woodTexture);
+		onePassShader.use();
+		onePassShader.setMat4("lightVP", lightVP);
+		renderScene(onePassShader, cubeVAO, cubeVBO, planeVAO);
+
+
+		// 1.5 可以在这里试一下draw depthmap,如不想画则注释此部分
+		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		showDepthMapShader.use();
+		glBindTexture(GL_TEXTURE_2D, depthMapTexture);
+		showDepthMapShader.setInt("depthMap", 0);
+		showDepthMapShader.setFloat("near", near);
+		showDepthMapShader.setFloat("far", far);
+		glBindVertexArray(quadVAO);
+		glActiveTexture(GL_TEXTURE0);
+
+		//glDisable(GL_DEPTH_TEST);
+
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+		// 1.5 end
+		//
+
+		//2 pass render
+
+
+		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
+		// -------------------------------------------------------------------------------
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	}
+
+	// optional: de-allocate all resources once they've outlived their purpose:
+	// ------------------------------------------------------------------------
+	glDeleteVertexArrays(1, &planeVAO);
+	glDeleteBuffers(1, &planeVBO);
+
+
+	glfwTerminate();
+	return 0;
+}
 */

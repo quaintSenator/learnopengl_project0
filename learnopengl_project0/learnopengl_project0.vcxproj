@@ -187,6 +187,12 @@
     <None Include="light_cube.vs" />
     <None Include="model_loading.fs" />
     <None Include="model_loading.vs" />
+    <None Include="shadowmap1pass.fs" />
+    <None Include="shadowmap1pass.vs" />
+    <None Include="shadowmap2pass.fs" />
+    <None Include="shadowmap2pass.vs" />
+    <None Include="showdepthmapshader.fs" />
+    <None Include="showdepthmapshader.vs" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -100,5 +100,23 @@
     <None Include="framebuffer.fs">
       <Filter>源文件</Filter>
     </None>
+    <None Include="shadowmap1pass.vs">
+      <Filter>源文件</Filter>
+    </None>
+    <None Include="shadowmap1pass.fs">
+      <Filter>源文件</Filter>
+    </None>
+    <None Include="shadowmap2pass.fs">
+      <Filter>源文件</Filter>
+    </None>
+    <None Include="shadowmap2pass.vs">
+      <Filter>源文件</Filter>
+    </None>
+    <None Include="showdepthmapshader.vs">
+      <Filter>源文件</Filter>
+    </None>
+    <None Include="showdepthmapshader.fs">
+      <Filter>源文件</Filter>
+    </None>
   </ItemGroup>
 </Project>

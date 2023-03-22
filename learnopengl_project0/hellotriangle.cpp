@@ -20,11 +20,14 @@ void processInput(GLFWwindow* window);
 unsigned int loadTexture(const char* path);
 void renderCube(unsigned int&, unsigned int&);
 void renderScene(const Shader&, unsigned int&, unsigned int&, unsigned int&);
+void renderSphere(const Shader&, unsigned int&, unsigned int&, unsigned int&, unsigned int&);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
-
+const unsigned int sphere_x_segment = 64;
+const unsigned int sphere_y_segment = 64;
+const float PI = 3.14159265359;
 // camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 float lastX = (float)SCR_WIDTH / 2.0;
@@ -78,212 +81,108 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS); 
     
+    const std::string pbrass = "D:/Cgworkplace/learnopenGLsource/LearnOpenGL/resources/textures/pbr/rusted_iron";
+
     // build and compile shaders
     // -------------------------
-    Shader onePassShader("shadowmap1pass.vs", "shadowmap1pass.fs");
-
-    Shader twoPassShader("shadowmap2pass.vs", "shadowmap2pass.fs");
-
-    Shader lightCubeShader("box.vs", "box.fs");
-
-    //这个程序的逻辑说明：我们先设定一个自定义的framebuffer，第一遍渲染我们不渲染到默认fbo，而是渲染给
-    //这个自定义的fbo，这样实际的渲染结果就存到了fbo texture attachment 当中，这次渲染对应光源视角
-    //然后我们再恢复默认fbo，再渲染一次，
-    //二次渲染的fs内容就是从texture直接采样
-
-
-
-    // set up vertex data (and buffer(s)) and configure vertex attributes
-    // ------------------------------------------------------------------
-
-    onePassShader.use();
-    
-
-    unsigned int planeVAO;
-    float planeVertices[] = {
-        // positions            // normals         // texcoords
-         25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  25.0f,  0.0f,
-        -25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
-        -25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f,
-
-         25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  25.0f,  0.0f,
-        -25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f,
-         25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,  25.0f, 25.0f
-    };
-
-    // plane VAO
-    unsigned int cubeVAO = 0, cubeVBO = 0;
-    unsigned int planeVBO;
-    glGenVertexArrays(1, &planeVAO);
-    glGenBuffers(1, &planeVBO);
-    glBindVertexArray(planeVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    glBindVertexArray(0);
-
-    unsigned int quadVAO;
-    unsigned int quadVBO;
-    float quadVertices[] = {
-        // positions        // texture Coords
-        -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-        -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-         1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-         1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-    };
-    // setup quad plane VAO
-    glGenVertexArrays(1, &quadVAO);
-    glGenBuffers(1, &quadVBO);
-    glBindVertexArray(quadVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-
-    glBindVertexArray(quadVAO);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    glBindVertexArray(0);
-
-
-    // load textures
-    unsigned int woodTexture = loadTexture("D:/Cgworkplace/learnopenGLsource/LearnOpenGL/resources/textures/wood.png");
-    // shader configuration
-    // --------------------
-
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    
-    //onePassShader.use();
-    //onePassShader.setInt("texture1", 0);
-    //twoPassShader.use();
-    //twoPassShader.setInt("texturesamp", 0);
-
-    //generate frame buffer for depthmap
-    unsigned int depthMapfbo;
-    glGenFramebuffers(1, &depthMapfbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, depthMapfbo);
-
-    unsigned int depthMapTexture;
-    glGenTextures(1, &depthMapTexture);
-    glBindTexture(GL_TEXTURE_2D, depthMapTexture);
-    const GLuint SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;//一张1024*1024的shadowmap,未必需要和屏幕等大
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_WIDTH, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-    
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    GLfloat borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-    //这里使用clamptoborder能解决两个问题：1在深度纹理之外的范围有多个阴影区域的问题，这是因为那里repeat到了三个盒子留下的深度位置
-    //2 在平台极远处有些点落在深度贴图之外，他们的深度按照原本算法将会大于边界值，现在边界值是最大值，远处不进行阴影
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMapTexture, 0);
-    //自定义的framebuffer绑定了一个深度纹理depthmap
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
-    //一般，如果一个fbo没有绑定颜色缓冲，是无法通过完备性检测的，我们可以通过上面两句话告诉openGL这个fbo不必绑定颜色缓冲，因为我们本来就
-    //不打算往里面绘制颜色
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE) {
-        std::cout << "FrameBuffer Complete" << std::endl;
-    }
-    else {
-        std::cout << "Frame buffer not Complete" << std::endl;
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    //这个帧缓冲是我们自己定义的帧缓冲，应当要求其让位，免得占据了默认帧缓冲的绑定态，从而让最终屏幕画不出东西
-
-    glm::vec3 lightPos = glm::vec3(-2.0f, 4.0f, -1.0f);
-    glm::vec3 sceneCenter = glm::vec3(0.0f, 0.0f, 0.0f);
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-
-   
+    Shader pbrdirectlightShader("./pbrdirectlight.vs", "./pbrdirectlight.fs");
+    Shader sphereExampleShader("./sphereExample.vs", "./sphereExample.fs");
+    unsigned int sphereVAO = 0;
+    unsigned int sphereVBO = 0;
+    unsigned int sphereEBO = 0;
+    unsigned int indexCount = 0;
     // render loop
-    // -----------
+    unsigned int nrRows = 4;
+    unsigned int nrColumns = 4;
+    float spacing = 2.5f;
+
+    pbrdirectlightShader.use();
+
+
+    glm::vec3 lightPositions[] = {
+        glm::vec3(-10.0f,  10.0f, 10.0f),
+        glm::vec3(10.0f,  10.0f, 10.0f),
+        glm::vec3(-10.0f, -10.0f, 10.0f),
+        glm::vec3(10.0f, -10.0f, 10.0f),
+    };
+    glm::vec3 lightColors[] = {
+        glm::vec3(300.0f, 300.0f, 300.0f),
+        glm::vec3(300.0f, 300.0f, 300.0f),
+        glm::vec3(300.0f, 300.0f, 300.0f),
+        glm::vec3(300.0f, 300.0f, 300.0f)
+    };
+
     while (!glfwWindowShouldClose(window))
     {
         // per-frame time logic
-        // --------------------
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
         processInput(window);
-
-        // 1 pass render: write to depth map
-        // ------
-        glBindFramebuffer(GL_FRAMEBUFFER, depthMapfbo);
-        glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-        
-        glClear(GL_DEPTH_BUFFER_BIT);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, woodTexture);
-        onePassShader.use();
-        //lightPos.y = 2 * sin(currentFrame) + 2;
-        float near = 1.0f, far = 40.0f;
-        glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near, far);
-        glm::mat4 lightview = glm::lookAt(lightPos, sceneCenter, up);
-        glm::mat4 lightVP = lightProjection * lightview;
-        onePassShader.setMat4("lightVP", lightVP);
-        renderScene(onePassShader, cubeVAO, cubeVBO, planeVAO);
-        //至此，depthMapfbo的深度附件上已经拥有了我们绘制好的shadowmap深度纹理
-        //若要取用这个纹理，直接绑定depthMapTexture即可
-        
-        //2 pass render
-        twoPassShader.use();
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);//回到默认fbo
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, woodTexture);
-        twoPassShader.setInt("diffuseTexture", 0);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, depthMapTexture);
-        twoPassShader.setInt("shadowMap", 1);
-        
-        twoPassShader.setVec3("lightPos", lightPos);
-        twoPassShader.setVec3("viewPos", camera.Position);
-        twoPassShader.setMat4("lightVP", lightVP);
-
+        pbrdirectlightShader.use();
+        glm::mat4 model = glm::mat4(1.0f);
         glm::mat4 view = camera.GetViewMatrix();
         glm::mat4 projection = glm::perspective(camera.Zoom, (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
-        twoPassShader.setMat4("view", view);
-        twoPassShader.setMat4("projection", projection);
+        pbrdirectlightShader.setVec3("cameraPos", camera.Position);
+        pbrdirectlightShader.setMat4("view", view);
+        pbrdirectlightShader.setMat4("projection", projection);
+        pbrdirectlightShader.setFloat("ao", 1.0f);
+        pbrdirectlightShader.setVec3("albedo", 0.5f, 0.0f, 0.0f);
 
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClearColor(0.3, 0.2, 0.1, 1.0);
+
+        sphereExampleShader.use();
+        sphereExampleShader.setMat4("view", view);
+        sphereExampleShader.setMat4("projection", projection);
+
+        for (unsigned int i = 0; i < 4; ++i)
+        {
+            glm::vec3 newPos = lightPositions[i];
+            pbrdirectlightShader.use();
+            pbrdirectlightShader.setVec3("lightPos[" + std::to_string(i) + "]", newPos);
+            pbrdirectlightShader.setVec3("lightColor[" + std::to_string(i) + "]", lightColors[i]);
+
+            model = glm::mat4(1.0f);
+            model = glm::translate(model, newPos);
+            model = glm::scale(model, glm::vec3(0.5f));
+            sphereExampleShader.use();
+            sphereExampleShader.setMat4("model", model);
+
+            renderSphere(sphereExampleShader, sphereVAO, sphereVBO, sphereEBO, indexCount);
+        }
+
+        pbrdirectlightShader.use();
+        for (int row = 0; row < nrRows; row++)
+        {
+            pbrdirectlightShader.setFloat("metallic", (float)row / (float)nrRows);
+            for (int col = 0; col < nrColumns; col++)
+            {
+                pbrdirectlightShader.setFloat("roughness", glm::clamp((float)col / (float)nrColumns, 0.05f, 1.0f));
+                //clamp区间平移：arg1大于上界返回上界，小于下界返回下界，否则返回arg1
+                //roughness = 0.0表示完美光滑表面，在直接光下看起来不太好
+
+                model = glm::mat4(1.0f);
+                model = glm::translate(model, glm::vec3(
+                    (col - ((float)nrColumns / 2.0)) * spacing,
+                    (row - ((float)nrRows / 2.0)) * spacing,
+                    //(row + 1) * (col + 1)
+                    -3.0
+                ));
+                pbrdirectlightShader.setMat4("model", model);
+                renderSphere(pbrdirectlightShader, sphereVAO, sphereVBO, sphereEBO, indexCount);
+            }
+        }
         
-        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-        glClearColor(0.1f, 0.2f, 0.1f, 1.0f);
+        
+        
+        
 
-        glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-        renderScene(twoPassShader, cubeVAO, cubeVBO, planeVAO);
-
-        lightCubeShader.use();
-        glBindVertexArray(cubeVAO);
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, lightPos);
-        model = glm::scale(model, glm::vec3(0.2f));
-        lightCubeShader.setMat4("model", model);
-        lightCubeShader.setMat4("view", view);
-        lightCubeShader.setMat4("projection", projection);
-        renderCube(cubeVAO, cubeVBO);
-
-        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-        // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-
     // optional: de-allocate all resources once they've outlived their purpose:
-    // ------------------------------------------------------------------------
-    glDeleteVertexArrays(1, &planeVAO);
-    glDeleteBuffers(1, &planeVBO);
-    glDeleteVertexArrays(1, &cubeVAO);
-    glDeleteBuffers(1, &cubeVBO);
 
     glfwTerminate();
     return 0;
@@ -327,6 +226,9 @@ unsigned int loadTexture(char const* path)
 
     return textureID;
 }
+
+
+
 
 void renderScene(const Shader& shader,unsigned int &cubeVAO, unsigned int &cubeVBO, unsigned int &planeVAO)
 {
@@ -426,6 +328,100 @@ void renderCube(unsigned int &cubeVAO, unsigned int &cubeVBO)
     glBindVertexArray(0);
 }
 
+void renderSphere(const Shader& shader, unsigned int &sphereVAO, unsigned int& sphereVBO, unsigned int& sphereEBO, unsigned int &indexCount)
+{
+    
+    // initialize (if necessary)
+    if (sphereVAO == 0)
+    {
+        //这种做法是从单位球上的球坐标而来的，原理简单说就是把球坐标仰角α 64等分，再把转角θ 64等分
+        //如此组合起来有64 * 64个方向(球心出发)，每个方向与单位球的交点就是我们需要的顶点
+        //这种分法会导致球的南极和北极区域点非常密集，而赤道区域相对稀疏
+        
+        std::vector<float> verts;
+        glm::vec3 vertice;
+        glm::vec3 normal;
+        glm::vec2 uv;
+        for (int i = 0; i <= sphere_x_segment; i++) {
+            for (int j = 0; j <= sphere_y_segment; j++) {
+                float xseg = (float)i / (float)sphere_x_segment;
+                float yseg = (float)j / (float)sphere_y_segment;
+                
+                float xPos = cos(2.0f * PI * xseg) * sin(yseg * PI);
+                float yPos = cos(PI * yseg);
+                float zPos = sin(xseg * 2.0f * PI) * sin(yseg * PI);
+                
+                vertice = glm::vec3(xPos, yPos, zPos);//从原点也就是球心指向迭代当前点，就是normal
+                normal = glm::normalize(glm::vec3(xPos, yPos, zPos));
+                uv = glm::vec2(xseg, yseg);//其实这也正是球表面uv采样的规范：[0,0]，[0,1/64],...[64/64, 64/64]
+
+                verts.push_back(vertice.x);
+                verts.push_back(vertice.y);
+                verts.push_back(vertice.z);
+                verts.push_back(normal.x);
+                verts.push_back(normal.y);
+                verts.push_back(normal.z);
+                verts.push_back(uv.x);
+                verts.push_back(uv.y);
+            }
+        }
+        //顶点数量是64 * 64
+        bool isOdd = false;
+        std::vector<unsigned int> indices;
+
+        //假如在平面上，上一条线有64个点，下一条线上有64个点，把他们全都连接成三角形条带：
+
+        for (unsigned int y = 0; y < sphere_y_segment; ++y)
+        {
+            if (!isOdd) // even rows: y == 0, y == 2; 
+            {
+                for (unsigned int x = 0; x <= sphere_x_segment; ++x)
+                {
+                    indices.push_back(y * (sphere_x_segment + 1) + x);
+                    indices.push_back((y + 1) * (sphere_x_segment + 1) + x);
+                    //0,65;1,66;2,67;......64,129
+                    //这是一段锯齿状的点阵：在纬度0的环和纬度1的环上，每个环64个点，这个顺序
+                    
+                }
+            }
+            else
+            {
+                for (int x = sphere_x_segment; x >= 0; --x)
+                {
+                    indices.push_back((y + 1) * (sphere_x_segment + 1) + x);
+                    indices.push_back(y * (sphere_x_segment + 1) + x);
+                    //130+64,65+64;130+63,65+63......130,65
+                }
+            }
+            isOdd = !isOdd;
+        }
+        
+        indexCount = static_cast<unsigned int>(indices.size());
+
+        glGenVertexArrays(1, &sphereVAO);
+        glGenBuffers(1, &sphereVBO);
+        glGenBuffers(1, &sphereEBO);
+        glBindVertexArray(sphereVAO);
+        // fill buffer
+        glBindBuffer(GL_ARRAY_BUFFER, sphereVBO);
+        glBufferData(GL_ARRAY_BUFFER, verts.size()* sizeof(float), &verts[0], GL_STATIC_DRAW);
+        //fill index
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sphereEBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+        // link vertex attributes
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    }
+    // render Cube
+    glBindVertexArray(sphereVAO);
+    glDrawElements(GL_TRIANGLE_STRIP, indexCount, GL_UNSIGNED_INT, 0);
+    //GL_TRIANGLE_STRIP 表示，我们将需要绘制三角形条带
+    //
+}
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
 void processInput(GLFWwindow* window)
@@ -443,14 +439,12 @@ void processInput(GLFWwindow* window)
         camera.ProcessKeyboard(RIGHT, deltaTime);
 }
 
-
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     // make sure the viewport matches the new window dimensions; note that width and 
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
 }
-
 
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 {
@@ -472,7 +466,6 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 
     camera.ProcessMouseMovement(xoffset, yoffset);
 }
-
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {

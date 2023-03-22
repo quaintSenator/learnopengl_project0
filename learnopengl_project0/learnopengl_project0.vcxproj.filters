@@ -118,5 +118,17 @@
     <None Include="showdepthmapshader.fs">
       <Filter>源文件</Filter>
     </None>
+    <None Include="pbrdirectlight.vs">
+      <Filter>源文件</Filter>
+    </None>
+    <None Include="pbrdirectlight.fs">
+      <Filter>源文件</Filter>
+    </None>
+    <None Include="sphereExample.vs">
+      <Filter>源文件</Filter>
+    </None>
+    <None Include="sphereExample.fs">
+      <Filter>源文件</Filter>
+    </None>
   </ItemGroup>
 </Project>

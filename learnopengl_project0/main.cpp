@@ -1,48 +1,28 @@
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-#include "stb_image.h"
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include "Shader.h"
-#include "Model.h"
-#include "camera.h"
-#include "main.h"
-#include <iostream>
+#include <string>
+#include "./m_Tool/Tool.h"
 
-#define DRAW_1_TRIANGLE 1001
-#define DRAW_1_TRIANGLE_WITH_EBO 1002
-#define TRIANGLE_TIME_SHIFT_COLOR 1003
-#define TRIANGLE_COLOR_INTERPOLATION 1004
-#define RECTANGLE_TEXTURE 1005
-#define RECTANGLE_2_TEXTURES 1006
-#define DRAW_CUBE_NO_ZBUFFER 1007
-#define DRAW_CUBE_ZBUFFER 1008
-#define BASIC_ILLUMINATION 1009
-#define PHONG_SHADING 1010
-#define SHADOW_MAP 1011
-#define PBR_DIRECT_LIGHT_SHADER 1020
 
 // settings
-extern const unsigned int SCR_WIDTH = 800;
-extern const unsigned int SCR_HEIGHT = 600;
+extern const unsigned int SCR_WIDTH = 1920;
+extern const unsigned int SCR_HEIGHT = 1080;
 const unsigned int sphere_x_segment = 64;
 const unsigned int sphere_y_segment = 64;
 const float PI = 3.14159265359;
-extern float deltaTime;
+/*extern float deltaTime;
 extern float lastFrame;
-extern float currentFrame;
-
-// camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
-float lastX = (float)SCR_WIDTH / 2.0;
-float lastY = (float)SCR_HEIGHT / 2.0;
-bool firstMouse = true;
-
-float deltaTime = 0.0;
-float lastFrame = 0.0;
-float currentFrame = 0.0;
+extern float currentFrame;*/
 
 int main()
+{
+    Tool::InitWindow(SCR_WIDTH,SCR_HEIGHT);
+    //Tool::LoadModel(MODEL_FORMAT_FBX);
+    //Tool::PickModelShader(PBR_DIRECT_LIGHT_SHADER);
+    Tool::RenderLoop();
+    Tool::Terminate();
+    return 0;
+} 
+
+/*int main()
 {
     // glfw: initialize and configure
     // ------------------------------
@@ -54,6 +34,7 @@ int main()
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
+
     // glfw window creation
     // --------------------
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
@@ -79,18 +60,80 @@ int main()
         return -1;
     }
 
+    // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
+    stbi_set_flip_vertically_on_load(true);
+
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS); 
-   
-    //main logic
-    process_shader(SHADOW_MAP, window);
 
+    // build and compile shaders
+    // -------------------------
+    Shader ourShader("./model_loading_vs.glsl", "./model_loading_fs.glsl");
+
+    // load models
+    // -----------
+    //Model ourModel(FileSystem::getPath("resources/objects/backpack/backpack.obj"));
+    Model ourModel("E:/workplace/vsworkplace/learnopengl_project0/learnopengl_project0/nanosuit/nanosuit.obj");
+
+    ourModel.Draw(ourShader);
+    // draw in wireframe
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+    // render loop
+    // -----------
+    while (!glfwWindowShouldClose(window))
+    {
+        // per-frame time logic
+        // --------------------
+        float currentFrame = static_cast<float>(glfwGetTime());
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+
+        camera.SetTarget(glm::vec3(0.0, 0.0, 0.0));
+        // input
+        // -----
+        processInput(window);
+        // render
+        // ------
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        
+        // don't forget to enable shader before setting uniforms
+        ourShader.use();
+        glm::vec3 lightPos = glm::vec3(1.2, 0.0, 1.0);
+        glm::vec3 cameraPos = camera.Position;
+        ourShader.setVec3("lightPos",lightPos);
+        ourShader.setVec3("cameraPos",cameraPos);
+        
+        // view/projection transformations
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 view = camera.GetViewMatrix();
+        ourShader.setMat4("projection", projection);
+        ourShader.setMat4("view", view);
+
+        // render the loaded model
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
+        //model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
+        model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));	// it's a bit too big for our scene, so scale it down
+        ourShader.setMat4("model", model);
+        ourModel.Draw(ourShader);
+        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
+        // -------------------------------------------------------------------------------
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    // glfw: terminate, clearing all previously allocated GLFW resources.
+    // ------------------------------------------------------------------
     glfwTerminate();
     return 0;
-} 
-void process_shader(int shader_name, GLFWwindow* window)
+}*/
+
+
+/*void process_shader(int shader_name, GLFWwindow* window)
 {
     switch(shader_name)
     {
@@ -133,45 +176,11 @@ void process_shader(int shader_name, GLFWwindow* window)
         default:
             break;
     }
-}
+}*/
 
 // utility function for loading a 2D texture from file
 // ---------------------------------------------------
-unsigned int loadTexture(char const* path)
-{
-    unsigned int textureID;
-    glGenTextures(1, &textureID);
-
-    int width, height, nrComponents;
-    unsigned char* data = stbi_load(path, &width, &height, &nrComponents, 0);
-    if (data)
-    {
-        GLenum format;
-        if (nrComponents == 1)
-            format = GL_RED;
-        else if (nrComponents == 3)
-            format = GL_RGB;
-        else if (nrComponents == 4)
-            format = GL_RGBA;
-
-        glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        stbi_image_free(data);
-    }
-    else
-    {
-        std::cout << "Texture failed to load at path: " << path << std::endl;
-        stbi_image_free(data);
-    }
-    return textureID;
-}
+/*
 void renderScene(const Shader& shader,unsigned int &cubeVAO, unsigned int &cubeVBO, unsigned int &planeVAO)
 {
     // floor
@@ -360,64 +369,5 @@ void renderSphere(const Shader& shader, unsigned int &sphereVAO, unsigned int& s
     //
 }
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
-void processInput(GLFWwindow* window)
-{
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(FORWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(RIGHT, deltaTime);
-}
-void processInput(GLFWwindow* window, Camera& camera)
-{
-    currentFrame = static_cast<float>(glfwGetTime());
-    deltaTime = currentFrame - lastFrame;
-    lastFrame = currentFrame;
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(FORWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(RIGHT, deltaTime);
-}
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
-    // make sure the viewport matches the new window dimensions; note that width and 
-    // height will be significantly larger than specified on retina displays.
-    glViewport(0, 0, width, height);
-}
 
-void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
-{
-    float xpos = static_cast<float>(xposIn);
-    float ypos = static_cast<float>(yposIn);
-
-    if (firstMouse)
-    {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
-    }
-
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
-
-    lastX = xpos;
-    lastY = ypos;
-
-    camera.ProcessMouseMovement(xoffset, yoffset);
-}
-
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
-    camera.ProcessMouseScroll(static_cast<float>(yoffset));
-}
+*/

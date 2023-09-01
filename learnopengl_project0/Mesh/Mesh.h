@@ -73,9 +73,7 @@ public:
         unsigned int heightNr = 1;
         
         shader.use();
-
         //shader.setMat4("model", model);
-        
         if(!isFBX)
         {
             for (unsigned int i = 0; i < textures.size(); i++)

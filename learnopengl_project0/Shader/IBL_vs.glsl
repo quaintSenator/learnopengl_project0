@@ -12,10 +12,6 @@ uniform mat4 projection;
 uniform vec3 lightPos;
 uniform vec3 cameraPos;
 
-out vec3 WorldPos;
-out vec3 Normal;
-out vec2 TexCoord;
-
 out VS_OUT
 {
     vec3 FragPos;
@@ -23,6 +19,7 @@ out VS_OUT
     vec3 TangentLightPos;
     vec3 TangentViewPos;
     vec3 TangentFragPos;
+    vec3 worldNormal;
 }vs_out;
 
 void main(){
@@ -41,6 +38,8 @@ void main(){
 	vs_out.TangentLightPos = TBN * lightPos;
 	vs_out.TangentViewPos = TBN * cameraPos;
 	vs_out.TangentFragPos = TBN * vs_out.FragPos;
+	mat3 noTranslateModel = mat3(model);
+	vs_out.worldNormal = noTranslateModel * aNormal;
 	
 	//Normal = mat3(model) * aNormal;
 	//TexCoord = aTexCoord;

@@ -334,8 +334,8 @@ void Scene::DrawModel(Camera& camera)
     
     if(drawModelShader == nullptr)
     {
-        string vsPath = m_root_dir + "Shader/direct_light_pbr_vs.glsl";
-        string fsPath = m_root_dir + "Shader/direct_light_pbr_fs.glsl";
+        string vsPath = m_root_dir + "Shader/IBL_vs.glsl";
+        string fsPath = m_root_dir + "Shader/IBL_fs.glsl";
         drawModelShader = new Shader(vsPath.c_str(),fsPath.c_str());
     }
     drawModelShader->use();
@@ -349,7 +349,7 @@ void Scene::DrawModel(Camera& camera)
     for(int i = 0; i < models.size(); i++)
     {
         drawModelShader->setMat4("model", model4models[i]);
-        
+        drawModelShader->setCubeTexture("irradianceMap", convolutionIrradianceCubeMapID, 5);
         for(auto mesh : models[i].meshes)
         {
             mesh.Draw(*drawModelShader, true);

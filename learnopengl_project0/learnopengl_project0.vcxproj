@@ -176,6 +176,8 @@
   <ItemGroup>
     <None Include="Shader\direct_light_pbr_fs.glsl" />
     <None Include="Shader\direct_light_pbr_vs.glsl" />
+    <None Include="Shader\IBL_fs.glsl" />
+    <None Include="Shader\IBL_vs.glsl" />
     <None Include="Shader\model_loading_fs.glsl" />
     <None Include="Shader\model_loading_vs.glsl" />
     <None Include="Shader\plane_fs.glsl" />

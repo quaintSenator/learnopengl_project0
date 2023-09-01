@@ -80,9 +80,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>E:\openGL\includes;E:\glfw-3.3.8\glfw-3.3.8\include;$(IncludePath);E:\assimp\assimp\include</IncludePath>
-    <LibraryPath>$(LibraryPath);E:\openGL\lib;"E:\assimp\assimp\lib\Debug\assimp-vc142-mtd.lib"</LibraryPath>
-    <ExternalIncludePath>E:\glm\glm;$(ExternalIncludePath)</ExternalIncludePath>
+    <IncludePath>D:\learnOpenGLRepo\learnopengl_project0\Includes\openGL\includes;D:\learnOpenGLRepo\learnopengl_project0\Includes\glfw-3.3.8\glfw-3.3.8\include;$(IncludePath);D:\learnOpenGLRepo\learnopengl_project0\Includes\AssImp_include</IncludePath>
+    <LibraryPath>$(LibraryPath);D:\learnOpenGLRepo\learnopengl_project0\Includes\openGL\lib;"D:\learnOpenGLRepo\learnopengl_project0\Includes\AssImp_include\lib\lib\Debug\assimp-vc142-mtd.lib"</LibraryPath>
+    <ExternalIncludePath>D:\learnOpenGLRepo\learnopengl_project0\Includes\glm\glm;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -129,7 +129,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;%(AdditionalDependencies);"E:\assimp\assimp\lib\Debug\assimp-vc142-mtd.lib"</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;%(AdditionalDependencies);D:\learnOpenGLRepo\learnopengl_project0\Includes\AssImp_include\lib\lib\Debug\assimp-vc142-mtd.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -150,7 +150,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\glad\src\glad.c" />
+    <ClCompile Include="..\Includes\glad\src\glad.c" />
     <ClCompile Include="Light\Light.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Model\Model.cpp" />
@@ -187,10 +187,18 @@
   <ItemGroup>
     <ClInclude Include="Scene\GeneratedModel.h" />
     <ClInclude Include="Scene\DrawableObject.h" />
+    <Content Include="Shader\convolution_radiance_fs.glsl" />
+    <Content Include="Shader\convolution_radiance_vs.glsl" />
     <Content Include="Shader\debug_fs.glsl" />
     <Content Include="Shader\debug_vs.glsl" />
     <Content Include="Shader\drawDepth_fs.glsl" />
     <Content Include="Shader\drawDepth_vs.glsl" />
+    <Content Include="Shader\hdr_capture_skybox_fs.glsl" />
+    <Content Include="Shader\hdr_capture_skybox_vs.glsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Shader\skybox_fs.glsl" />
+    <Compile Include="Shader\skybox_vs.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

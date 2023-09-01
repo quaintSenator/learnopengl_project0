@@ -1,8 +1,13 @@
-﻿#pragma once
-#include <glm/glm.hpp>
+﻿
+#ifndef GENERATED_MODEL_H
+#define GENERATED_MODEL_H
+
 #include "../Shader/Shader.h"
 #include <vector>
 #include "../Model/Model.h"
+#include "../m_Tool/Tool.h"
+#include "../main.h"
+
 
 enum GeneratedModelType
 {
@@ -79,7 +84,8 @@ public:
         //delete generatedMesh;
     }
     
-    std::string planeTextureDirectory = "E:/workplace/vsworkplace/learnopengl_project0/learnopengl_project0/textures";
+    //std::string planeTextureDirectory = "E:/workplace/vsworkplace/learnopengl_project0/learnopengl_project0/textures";
+    std::string planeTextureDirectory = m_root_dir + "textures";
     std::string planeTextureFilename = "wood.png";
     void loadGenModelTexture()
     {
@@ -98,3 +104,5 @@ private:
 #pragma region 垃圾桶
 
 #pragma endregion
+
+#endif

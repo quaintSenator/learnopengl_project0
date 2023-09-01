@@ -7,6 +7,8 @@
 #define SHADOW_WIDTH 1024
 #define SHADOW_HEIGHT 1024
 
+std::string m_root_dir;
+
 float Tool::deltaTime = 0.0;
 float Tool::lastFrame = 0.0;
 float Tool::currentFrame = 0.0;
@@ -25,8 +27,9 @@ glm::mat4 Tool::prospective = glm::mat4(1.0);
 glm::mat4 Tool::lightVP = glm::mat4(1.0);
 glm::vec3 Tool::lightPosition = glm::vec3(1.0);
 
-std::string Tool::modelFileDirectory = "E:/workplace/vsworkplace/learnopengl_project0/learnopengl_project0/Lion/Geo_Lion.fbx";
-std::string Tool::shaderFileDirectory = "E:/workplace/vsworkplace/learnopengl_project0/learnopengl_project0/Shader";
+//std::string Tool::modelFileDirectory = "E:/workplace/vsworkplace/learnopengl_project0/learnopengl_project0/Lion/Geo_Lion.fbx";
+std::string Tool::modelFileDirectory = m_root_dir + "Lion/Geo_Lion.fbx";
+std::string Tool::shaderFileDirectory = m_root_dir + "Shader";
 int Tool::model_format = MODEL_FORMAT_FBX;
 unsigned int Tool::planeTextureID = 0;
 unsigned int Tool::planeVAO = -1;
@@ -113,7 +116,8 @@ void Tool::RenderLoop()
     Scene myScene = Scene();
     myScene.SetSceneShader();
     myScene.SetDepthMap();
-    
+    myScene.PrepareEnvironmentCubemap();
+    myScene.ReimannsSumConvolution();
     while(!glfwWindowShouldClose(window))
     {
         Tick();
@@ -251,7 +255,7 @@ void Tool::DrawPlane()
     {
         planeTextureID = Model::TextureFromFile(
         "wood.png",
-        std::string("E:/workplace/vsworkplace/learnopengl_project0/learnopengl_project0/textures"),
+        std::string(m_root_dir + "textures"),
         false
         );
     }
@@ -295,7 +299,7 @@ void Tool::PickModelShader(int shaderType)
 {
     string vsPath;
     string fsPath;
-    string shaderFileRootPath = "E:/workplace/vsworkplace/learnopengl_project0/learnopengl_project0/Shader";
+    string shaderFileRootPath = m_root_dir + "Shader";
     switch(shaderType)
     {
     case BASIC_TEXTURING_SHADER:
@@ -315,8 +319,8 @@ void Tool::GenerateDepthMapNShader()
 {
     if(drawDepthShader == nullptr)
     {
-        std::string vsPath = "E:/workplace/vsworkplace/learnopengl_project0/learnopengl_project0/Shader/drawDepth_vs.glsl";
-        std::string fsPath = "E:/workplace/vsworkplace/learnopengl_project0/learnopengl_project0/Shader/drawDepth_fs.glsl";
+        std::string vsPath = m_root_dir + "Shader/drawDepth_vs.glsl";
+        std::string fsPath = m_root_dir + "Shader/drawDepth_fs.glsl";
         drawDepthShader = new Shader(vsPath.c_str(), fsPath.c_str());
         
         unsigned int depthMap;

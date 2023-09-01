@@ -1,5 +1,7 @@
 #ifndef MODEL_H
 #define MODEL_H
+#include <glad/glad.h>
+
 #include "../Mesh/Mesh.h"
 #include "../m_Tool/stb_image.h"
 #include <assimp/Importer.hpp>
@@ -10,7 +12,6 @@
 #include <string>
 #include <fstream>
 #include <iostream>
-#include <map>
 #include <vector>
 
 #define MODEL_FORMAT_FBX 1
@@ -58,7 +59,8 @@ public:
         }
     }
     unsigned int static TextureFromFile(const char* path, const string& directory, bool gamma = false);
-
+    unsigned int static TextureFromFile_CubeMap(const string& directory);
+    unsigned int static TextureFromFile_HDREnvMap(const char* path, const string& directory);
 private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
     void loadModel(string const& path)

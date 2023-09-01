@@ -1,10 +1,12 @@
 ﻿#ifndef TOOL_H
 #define TOOL_H
 
+#include <glad/glad.h>
 #include "../Model/Model.h"
 #include "../Camera/camera.h"
-//#include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
+
 
 #pragma region ShaderTypeMacro
 #define DRAW_1_TRIANGLE 1001

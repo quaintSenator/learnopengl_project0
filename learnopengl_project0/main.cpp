@@ -1,5 +1,7 @@
-#include <string>
 #include "./m_Tool/Tool.h"
+#include "main.h"
+#include <string>
+#include "Scene/GeneratedModel.h"
 
 
 // settings
@@ -15,6 +17,7 @@ extern float currentFrame;*/
 int main()
 {
     Tool::InitWindow(SCR_WIDTH,SCR_HEIGHT);
+    m_root_dir = "D:/learnOpenGLRepo/learnopengl_project0/learnopengl_project0/";
     //Tool::LoadModel(MODEL_FORMAT_FBX);
     //Tool::PickModelShader(PBR_DIRECT_LIGHT_SHADER);
     Tool::RenderLoop();

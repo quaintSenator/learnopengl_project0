@@ -21,9 +21,9 @@ enum Camera_Movement {
 // Default camera values
 const float YAW = -90.0f;
 const float PITCH = 0.0f;
-const float SPEED = 2.0f;
-const float SENSITIVITY = 0.05f;
-const float ZOOM = 60.0f;
+const float SPEED = 1.0f;
+const float SENSITIVITY = 0.03f;
+const float ZOOM = 45.0f;
 
 // An abstract camera class that processes input and calculates the corresponding Euler Angles, Vectors and Matrices for use in OpenGL
 class Camera
@@ -57,7 +57,7 @@ public:
     MouseSensitivity(SENSITIVITY),
     Zoom(ZOOM),
     aspect(1920.0f/1080.0f),
-    far(300.0f),
+    far(1000.0f),
     near(0.1f)
     {
         Position = position;
@@ -83,7 +83,8 @@ public:
     }
     glm::mat4 GetCameraPerspective()
     {
-        glm::mat4 perspective = glm::perspective(glm::radians(Zoom), aspect, near, far);
+        //glm::mat4 perspective = glm::perspective(glm::radians(Zoom), aspect, near, far);
+        glm::mat4 perspective = glm::perspective(Zoom, aspect, near, far);
         //glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)screenWidth / (float)screenHeight, 0.1f, 100.0f);
         return perspective;
     }
@@ -112,11 +113,11 @@ public:
             Position -= Up * velocity;
         if (direction == LEFT_ROT)
         {
-            rotateAroundCenter(-0.8f);
+            rotateAroundCenter(-0.2f);
         }
         if (direction == RIGHT_ROT)
         {
-            rotateAroundCenter(0.8f);
+            rotateAroundCenter(0.2f);
         }
     }
 
@@ -161,9 +162,12 @@ private:
     {
         // calculate the new Front vector
         glm::vec3 front;
-        front.x = cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));
+        /*front.x = cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));
         front.y = sin(glm::radians(Pitch));
-        front.z = sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
+        front.z = sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));*/
+        front.x = cos(Yaw) * cos(Pitch);
+        front.y = sin(Pitch);
+        front.z = sin(Yaw) * cos(Pitch);
 
         Front = glm::normalize(front);
         // also re-calculate the Right and Up vector

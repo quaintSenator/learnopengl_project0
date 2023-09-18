@@ -64,7 +64,7 @@ public:
         glBindVertexArray(0);
     }
     // render the mesh
-    void Draw(Shader& shader, bool isFBX)
+    void Draw(Shader& shader, bool isFBX, bool isDefered = false)
     {
         // bind appropriate textures
         unsigned int diffuseNr = 1;
@@ -115,6 +115,10 @@ public:
              * Alpha: Smoothness
              */
         }
+        if(isDefered)
+        {
+            
+        }
         // draw mesh
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
@@ -123,7 +127,6 @@ public:
         // always good practice to set everything back to defaults once configured.
         glActiveTexture(GL_TEXTURE0);
     }
-
 private:
     // render data 
     unsigned int VBO, EBO;

@@ -123,6 +123,13 @@ public:
         glBindTexture(GL_TEXTURE_2D, textureID);
         glActiveTexture(GL_TEXTURE0);
     }
+    void useTexture(int textureID, int slot)
+    {
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glActiveTexture(GL_TEXTURE0);
+    }
+    
     void setCubeTexture(const std::string& name, int textureID, int slot)
     {
         this->setInt(name, slot);

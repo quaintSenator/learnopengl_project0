@@ -46,7 +46,6 @@ unsigned int Model::TextureFromFile_CubeMap(const string& directory)
 
     unsigned int cubemapTextureID;
     glGenTextures(1, &cubemapTextureID);
-
     int width, height, nrComponents;
     unsigned char* data;
 
@@ -122,6 +121,8 @@ unsigned int Model::TextureFromFile_HDREnvMap(const char* path, const string& di
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+        std::cout<< "HDR texture loaded Success, TextureID = " << hdrTextureID << std::endl;
     }
     else
     {

@@ -86,14 +86,12 @@ void main(){
 	vec3 kd = (1.0 - metallic) * (vec3(1.0) - ks);
 	float fcooktorrance = GGX(ndotv, roughness) * NDF(roughness, ndoth) / (4.0 * ndotv * ndotl + 0.001); 
 
-		L0 += radiance *  (flambert * kd + fcooktorrance * ks) * ndotl;
+	L0 += radiance *  (flambert * kd + fcooktorrance * ks) * ndotl;
 
 	vec3 ambient = vec3(0.03) * albedo * ao;
 	vec3 color = ambient + L0;
-	
+
 	//color = color / (color + vec3(1.0));
     //color = pow(color, vec3(1.0/2.2));
-	
-	
 	FragColor = vec4(color, 1.0);
 }

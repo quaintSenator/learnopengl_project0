@@ -265,8 +265,4 @@ private:
         return textures;
     }
 };
-
-
-
-
 #endif

@@ -115,9 +115,13 @@ void Tool::RenderLoop()
     //lightPosition = glm::vec3(-2.0, 10.0, -1.0);
     Scene myScene = Scene();
     myScene.SetSceneShader();
-    myScene.SetDepthMap();
     myScene.PrepareEnvironmentCubemap();
     myScene.ReimannsSumConvolution();
+    myScene.SetDepthMaps();
+    myScene.PreparePrefilteredEnvCubemap();
+    myScene.PrepareLUT();
+    myScene.PrepareGBuffer();
+    //myScene.PreparePrefilteredEnvCubemap();
     while(!glfwWindowShouldClose(window))
     {
         Tick();
@@ -185,7 +189,7 @@ void Tool::TickLight(glm::vec3 &light)
 
 void Tool::DrawPlaneDepth()
 {
-    float planeVertices[] = {
+    /*float planeVertices[] = {
         // positions            // normals         // texcoords
         2.0f, -0.013f,  2.0f,  0.0f, 1.0f, 0.0f,   5.0f,  0.0f,
        -2.0f, -0.013f,  2.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
@@ -218,7 +222,7 @@ void Tool::DrawPlaneDepth()
 
     glBindVertexArray(planeVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
-    glBindVertexArray(0);
+    glBindVertexArray(0);*/
 }
 void Tool::DrawPlane()
 {
@@ -315,7 +319,7 @@ void Tool::PickModelShader(int shaderType)
     }
     MakeShader(vsPath.c_str(), fsPath.c_str());
 }
-void Tool::GenerateDepthMapNShader()
+/*void Tool::GenerateDepthMapNShader()
 {
     if(drawDepthShader == nullptr)
     {
@@ -341,12 +345,12 @@ void Tool::GenerateDepthMapNShader()
         glReadBuffer(GL_NONE);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
-}
+}*/
 void Tool::MakeShader(const char* vsPath, const char* fsPath)
 {
     currentUsedShader = new Shader(vsPath, fsPath);
 }
-unsigned int Tool::loadTexture(char const* path)
+/*unsigned int Tool::loadTexture(char const* path)
 {
     unsigned int textureID;
     glGenTextures(1, &textureID);
@@ -380,7 +384,7 @@ unsigned int Tool::loadTexture(char const* path)
         //stbi_image_free(data);
     }
     return textureID;
-}
+}*/
 
 /*void Tool::GenerateMVP()
 {

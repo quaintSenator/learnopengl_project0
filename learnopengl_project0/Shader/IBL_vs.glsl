@@ -9,17 +9,18 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-uniform vec3 lightPos;
+uniform vec3 lightPos[5];
 uniform vec3 cameraPos;
 
 out VS_OUT
 {
     vec3 FragPos;
     vec2 TexCoord;
-    vec3 TangentLightPos;
+    vec3 TangentLightPos[5];
     vec3 TangentViewPos;
     vec3 TangentFragPos;
     vec3 worldNormal;
+    vec3 Normal;
 }vs_out;
 
 void main(){
@@ -35,12 +36,14 @@ void main(){
 	vec3 N = normalize(NormalMatrix * aNormal);
 	
 	mat3 TBN = transpose(mat3(T, B, N));//正交矩阵，转置 = 求逆
-	vs_out.TangentLightPos = TBN * lightPos;
+	for(int i = 0; i < 5; i++)
+	{
+	    vs_out.TangentLightPos[i] = TBN * lightPos[i];
+	}
 	vs_out.TangentViewPos = TBN * cameraPos;
 	vs_out.TangentFragPos = TBN * vs_out.FragPos;
 	mat3 noTranslateModel = mat3(model);
+	vs_out.Normal = aNormal;
 	vs_out.worldNormal = noTranslateModel * aNormal;
-	
-	//Normal = mat3(model) * aNormal;
-	//TexCoord = aTexCoord;
+	//一个不同：log的Normal没有再乘以noTranslateModel
 }

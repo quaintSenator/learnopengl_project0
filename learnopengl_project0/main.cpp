@@ -3,10 +3,9 @@
 #include <string>
 #include "Scene/GeneratedModel.h"
 
-
 // settings
 extern const unsigned int SCR_WIDTH = 1920;
-extern const unsigned int SCR_HEIGHT = 1080;
+extern const unsigned int SCR_HEIGHT = 1061;
 const unsigned int sphere_x_segment = 64;
 const unsigned int sphere_y_segment = 64;
 const float PI = 3.14159265359;
@@ -18,8 +17,6 @@ int main()
 {
     Tool::InitWindow(SCR_WIDTH,SCR_HEIGHT);
     m_root_dir = "D:/learnOpenGLRepo/learnopengl_project0/learnopengl_project0/";
-    //Tool::LoadModel(MODEL_FORMAT_FBX);
-    //Tool::PickModelShader(PBR_DIRECT_LIGHT_SHADER);
     Tool::RenderLoop();
     Tool::Terminate();
     return 0;

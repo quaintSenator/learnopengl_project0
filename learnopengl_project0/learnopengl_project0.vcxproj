@@ -176,12 +176,19 @@
   <ItemGroup>
     <None Include="Shader\direct_light_pbr_fs.glsl" />
     <None Include="Shader\direct_light_pbr_vs.glsl" />
+    <None Include="Shader\geometry_pass_fs.glsl" />
+    <None Include="Shader\geometry_pass_vs.glsl" />
     <None Include="Shader\IBL_fs.glsl" />
     <None Include="Shader\IBL_vs.glsl" />
+    <None Include="Shader\lighting_pass_fs.glsl" />
+    <None Include="Shader\lighting_pass_vs.glsl" />
     <None Include="Shader\model_loading_fs.glsl" />
     <None Include="Shader\model_loading_vs.glsl" />
+    <None Include="Shader\multilight_plane_fs.glsl" />
+    <None Include="Shader\multilight_plane_vs.glsl" />
     <None Include="Shader\plane_fs.glsl" />
     <None Include="Shader\plane_vs.glsl" />
+    <None Include="Shader\ssao_vs.glsl" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\container.jpg" />
@@ -197,10 +204,15 @@
     <Content Include="Shader\drawDepth_vs.glsl" />
     <Content Include="Shader\hdr_capture_skybox_fs.glsl" />
     <Content Include="Shader\hdr_capture_skybox_vs.glsl" />
+    <Content Include="Shader\lut_fs.glsl" />
+    <Content Include="Shader\lut_vs.glsl" />
+    <Content Include="Shader\prefilter_hdr_fs.glsl" />
+    <Content Include="Shader\prefilter_hdr_vs.glsl" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Shader\skybox_fs.glsl" />
     <Compile Include="Shader\skybox_vs.glsl" />
+    <Compile Include="Shader\ssao_fs.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

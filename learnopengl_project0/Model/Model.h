@@ -16,7 +16,7 @@
 
 #define MODEL_FORMAT_FBX 1
 #define MODEL_FORMAT_OBJ 2
-
+#define MODEL_GENERATED_TYPE_PLANE 3
 using namespace std;
 
 class Model
@@ -28,6 +28,7 @@ public:
     string directory;
     bool gammaCorrection;
     int model_format;
+    glm::mat4 m_model;
     
     // constructor, expects a filepath to a 3D model.
     Model(string const& path, int m_format, bool gamma = false) : gammaCorrection(gamma)
@@ -35,7 +36,27 @@ public:
         model_format = m_format;
         loadModel(path);
     }
-    
+    Model(int generatedModelType)//生成模型
+    {
+        switch(generatedModelType)
+        {
+            case MODEL_GENERATED_TYPE_PLANE:
+                meshes.emplace_back(0b1100);
+                //texture还没有load
+                for(int j = 0; j < meshes.size(); j++)
+                {
+                    for(int i = 0; i < meshes[j].textures.size(); i++)
+                    {
+                        Texture &texture_ref = meshes[j].textures[i];
+                        texture_ref.id = TextureFromFile(texture_ref.path, false);
+                    }
+                }
+                m_model = glm::mat4(1.0);
+                break;
+            default:
+                break;
+        }
+    }
     Model()
     {
         //default Constructor for static initialize
@@ -59,6 +80,7 @@ public:
         }
     }
     unsigned int static TextureFromFile(const char* path, const string& directory, bool gamma = false);
+    unsigned int static TextureFromFile(const string fullpath, bool gamma);
     unsigned int static TextureFromFile_CubeMap(const string& directory);
     unsigned int static TextureFromFile_HDREnvMap(const char* path, const string& directory);
 private:
@@ -74,18 +96,14 @@ private:
             cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << endl;
             return;
         }
-        // retrieve the directory path of the filepath
         directory = path.substr(0, path.find_last_of('/'));
-
         if(model_format == MODEL_FORMAT_FBX)
         {
             loadGlobalTextures();
         }
         //这样一来，在processMesh第一次调用之前，所有的全局textures都已经写入model当中了
-        // process ASSIMP's root node recursively
         processNode(scene->mRootNode, scene);
     }
-
     // processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
     void processNode(aiNode* node, const aiScene* scene)
     {
@@ -104,7 +122,6 @@ private:
         }
 
     }
-
     Mesh processMesh(aiMesh* mesh, const aiScene* scene)
     {
         // data to fill
@@ -198,7 +215,6 @@ private:
         // return a mesh object created from the extracted mesh data
         return Mesh(vertices, indices, textures);
     }
-
     void SetMeshTextures(vector<Texture> &texturesToWrite)
     {
         if(textures_loaded.size()<3)
@@ -213,10 +229,9 @@ private:
         }
     }
     //由此，所有的PBR mesh里的texture都没有type 和 path，因此draw逻辑也要据此调整
-
     void loadGlobalTextures()
     {
-        int width,height,nrChannel;
+        int width, height, nrChannel;
         std::vector<std::string> Paths;
         Paths.push_back(string("Lion_M_Lion_AlbedoTransparency.tga")); //Albedo
         Paths.push_back(string("Lion_M_Lion_Normal.tga")); //Normal

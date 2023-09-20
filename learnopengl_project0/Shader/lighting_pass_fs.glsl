@@ -12,8 +12,8 @@ uniform samplerCube irradianceMap;
 uniform samplerCube prefilterMap;
 uniform sampler2D brdfLUT;
 
-uniform vec3 lightPos[100];
-uniform vec3 lightColor[100];
+uniform vec3 lightPos[9];
+uniform vec3 lightColor[9];
 uniform vec3 cameraPos;
 
 const float PI = 3.14159265359;
@@ -101,7 +101,7 @@ void main()
 	
 	// ----------------------------------------------------------------------------
     //直接光部分
-    for(int i = 0; i < 100; i++)
+    for(int i = 0; i < 9; i++)
     {
         vec3 l = normalize(lightPos[i] - fragPos);//世界空间光照方向
         vec3 h = normalize(V + l);
@@ -128,19 +128,6 @@ void main()
      //采样漫反射贴图
     vec3 irradiance = texture(irradianceMap, n).rgb;
     vec3 diffuseColor = irradiance * albedo;
-    /*
-uniform sampler2D texture_diffuse1;
-uniform sampler2D texture_normal1;
-uniform sampler2D texture_maskmap;
-uniform sampler2D texture_AO1;
-
-uniform samplerCube irradianceMap;
-uniform samplerCube prefilterMap;
-uniform sampler2D brdfLUT;
-
-uniform vec3 cameraPos;
-uniform vec3 lightPos[5];
-*/
     //采样lut和预滤波贴图
     const float MAX_LOD = 4.0;
     vec3 prefilteredColor = textureLod(prefilterMap, R, roughness * MAX_LOD).rgb;
@@ -153,5 +140,5 @@ uniform vec3 lightPos[5];
 	vec3 ambient =  (kd * diffuseColor + specular) * ao;
 	vec3 color = ambient + L0;
 	
-	FragColor = vec4(L0, 1.0);
+	FragColor = vec4(color, 1.0);
 }

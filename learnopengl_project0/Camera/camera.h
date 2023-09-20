@@ -57,7 +57,7 @@ public:
     MouseSensitivity(SENSITIVITY),
     Zoom(ZOOM),
     aspect(1920.0f/1061.0f),
-    far(1000.0f),
+    far(100.0f),
     near(0.1f)
     {
         Position = position;

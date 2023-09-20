@@ -1,6 +1,6 @@
 #version 330 core
 out vec4 FragColor;
-layout (location = 0) out vec3 G_FragPos;
+layout (location = 0) out vec4 G_FragPos;
 layout (location = 1) out vec3 G_Normal;
 layout (location = 2) out vec3 G_DiffuseColor;
 layout (location = 3) out vec3 G_Ao;
@@ -19,9 +19,17 @@ in VS_OUT{
 } fs_in;
 uniform mat4 model;
 
+const float NEAR = 0.1;
+const float FAR = 100.0;
+float linearizeDepth(float depth)
+{
+    float z = depth * 2.0 - 1.0;
+    return (2.0 * NEAR * FAR)/ (FAR + NEAR - z * (FAR - NEAR));
+}//线性深度在[0, 1]
+
 void main()
 {   
-    G_FragPos = fs_in.FragPos;
+    G_FragPos = vec4(fs_in.FragPos, gl_FragCoord.z);
     
     //我们在G_Normal直接写入转换完成的精法线
     vec3 normal = normalize(texture(texture_normal1, fs_in.uv)).xyz;//切线空间

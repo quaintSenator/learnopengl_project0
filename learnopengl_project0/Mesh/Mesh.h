@@ -1,12 +1,13 @@
 #ifndef MESH_H
 #define MESH_H
 
+#include "../Model/Model.h"
 #include <glad/glad.h> // holds all OpenGL type declarations
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "../Shader/Shader.h"
-#include "../m_Tool/Tool.h"
+
 #include <string>
 #include <vector>
 
@@ -39,31 +40,90 @@ struct Texture {
 
 class Mesh {
 public:
-    // mesh Data
     vector<Vertex>       vertices;
     vector<unsigned int> indices;
     vector<Texture>      textures;
     unsigned int VAO;
-    //glm::mat4 model;
-    
+    int textureBitMask;
     // constructor
     Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures)
     {
+        textureBitMask = 0b1111;
         this->vertices = vertices;
         this->indices = indices;
         this->textures = textures;
-        
-        // now that we have all the required data, set the vertex buffers and its attribute pointers.
         setupMesh();
         std::cout << "VAO = " << VAO << " VBO = " << VBO << " EBO = " << EBO << std::endl;
     }
+    Mesh(int texBitMask)
+    {
+        textures = vector<Texture>(4);
+        textureBitMask = texBitMask;
+        Build_generated_model_plane();
+        std::cout << "Generated Mesh, VAO = " << VAO << std::endl;
+    }
 
+    void Build_generated_model_plane()
+    {
+        #pragma region 生成顶点配置VAO&VBO
+        std::vector<float> planeVertices = {
+            // positions            // normals         // texcoords     //tangent         //bitangent=NXT
+            5.0f, -0.013f,  5.0f,  0.0f, 1.0f, 0.0f,   5.0f,  0.0f,     0.0f, 0.0f, 1.0f,  1.0f, 0.0f, 1.0f,
+           -5.0f, -0.013f,  5.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,     0.0f, 0.0f, 1.0f,  1.0f, 0.0f, 1.0f,
+           -5.0f, -0.013f, -5.0f,  0.0f, 1.0f, 0.0f,   0.0f,  5.0f,     0.0f, 0.0f, 1.0f,  1.0f, 0.0f, 1.0f,
+            5.0f, -0.013f,  5.0f,  0.0f, 1.0f, 0.0f,   5.0f,  0.0f,     0.0f, 0.0f, 1.0f,  1.0f, 0.0f, 1.0f,
+           -5.0f, -0.013f, -5.0f,  0.0f, 1.0f, 0.0f,   0.0f,  5.0f,     0.0f, 0.0f, 1.0f,  1.0f, 0.0f, 1.0f,
+            5.0f, -0.013f, -5.0f,  0.0f, 1.0f, 0.0f,   5.0f,  5.0f,     0.0f, 0.0f, 1.0f,  1.0f, 0.0f, 1.0f
+        };
+        glGenVertexArrays(1, &this->VAO);
+        glBindVertexArray(this->VAO);
+        glGenBuffers(1, &this->VBO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, planeVertices.size() * sizeof(float), &planeVertices[0], GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(6 * sizeof(float)));
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(8 * sizeof(float)));
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(11 * sizeof(float)));
+        
+        glBindVertexArray(0);
+        #pragma endregion
+        #pragma region 写入textures但未load
+        Texture diffuse_texture = Texture();
+        Texture normal_texture = Texture();
+        diffuse_texture.path = "D:/learnOpenGLRepo/learnopengl_project0/learnopengl_project0/textures/brickwall.jpg";
+        normal_texture.path = "D:/learnOpenGLRepo/learnopengl_project0/learnopengl_project0/textures/brickwall_normal.jpg";
+        textures.resize(2);
+        textures[0] = diffuse_texture;
+        textures[1] = normal_texture;
+        #pragma endregion 
+    }
     void Draw2depth(Shader& depthShader){
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
     }
-    // render the mesh
+    int hasDiffuse()
+    {
+        return (textureBitMask & 0b1000) >> 3;
+    }
+    int hasNormal()
+    {
+        return (textureBitMask & 0b0100) >> 2;
+    }
+    int hasMaskMap()
+    {
+        return (textureBitMask & 0b0010) >> 1;
+    }
+    int hasAO()
+    {
+        return (textureBitMask & 0b0001);
+    }
     void Draw(Shader& shader, bool isFBX, bool isDefered = false)
     {
         // bind appropriate textures
@@ -100,26 +160,28 @@ public:
         }
         else // FBX 
         {
-            if(textures.size() >= 4)
+            if(hasDiffuse())
             {
                 shader.setTexture(string("texture_diffuse1"), textures[0].id, 0);
+            }
+            if(hasNormal())
+            {
                 shader.setTexture(string("texture_normal1"), textures[1].id, 1);
+            }
+            if(hasMaskMap())
+            {
                 shader.setTexture(string("texture_maskmap"), textures[2].id, 2);
+            }
+            if(hasAO())
+            {
                 shader.setTexture(string("texture_AO1"), textures[3].id, 3);
             }
             
-            /* Unity的Maskmap
-             * Red: Metallic
-             * Green: Occlusion
-             * Blue: DetailMask
-             * Alpha: Smoothness
-             */
         }
         if(isDefered)
         {
             
         }
-        // draw mesh
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);

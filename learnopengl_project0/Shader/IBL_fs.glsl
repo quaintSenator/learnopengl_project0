@@ -156,7 +156,6 @@ void main(){
     vec3 kd = 1.0 - F;
 	vec3 ambient =  (kd * diffuceColor + specular) * ao;
 	vec3 color = ambient + L0;
-	//vec3 color = ambient;
-
+	
 	FragColor = vec4(color, 1.0);
 }

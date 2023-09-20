@@ -7,21 +7,41 @@ extern std::string m_root_dir;
 Scene::Scene()
 {
     scene_render_mode = USE_DEFERED_RENDERING;
-    plane = GeneratedModel(glm::mat4(1.0));//GeneratedModel自带model矩阵
-#pragma region 加载lion模型
+    //plane = GeneratedModel(glm::mat4(1.0));//GeneratedModel自带model矩阵
+    plane = Model(MODEL_GENERATED_TYPE_PLANE);
+
+    #pragma region 加载lion模型
     std::string LionmodelFileDirectory =  m_root_dir + "Lion/Geo_Lion.fbx";
-    glm::mat4 model4lion = glm::mat4(1.0f);
-    
-    //model4lion = glm::translate(model4lion, glm::vec3(0.0f, 0.0f, -2.0f));
-    model4lion = glm::rotate(model4lion, 180.0f, glm::vec3(0.0, 1.0, 0.0));
-    model4lion = glm::scale(model4lion, glm::vec3(0.02f, 0.02f, 0.02f));
-    model4lion = glm::translate(model4lion, glm::vec3(0.0f, -94.0f, 0.0f)); // translate it down so it's at the center of the scene
-    //model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
-    models.push_back(Model(LionmodelFileDirectory, MODEL_FORMAT_FBX));
-    model4models.push_back(model4lion);
-#pragma endregion
+    //model4lion = glm::rotate(model4lion, 180.0f, glm::vec3(0.0, 1.0, 0.0));
+    //model4lion = glm::scale(model4lion, glm::vec3(0.02f, 0.02f, 0.02f));
+    //model4lion = glm::translate(model4lion, glm::vec3(0.0f, -94.0f, 0.0f)); 
+    Model lionModel = Model(LionmodelFileDirectory, MODEL_FORMAT_FBX);
+    float interval = 70.0f;
+    vector<glm::vec3> offsetVecs{
+        glm::vec3(-interval,    -94.0f,     -interval),
+        glm::vec3(00.0f,     -94.0f,     -interval),
+        glm::vec3(interval,     -94.0f,     -interval),
+        glm::vec3(-interval,    -94.0f,     0.0f),
+        glm::vec3(0.0f,     -94.0f,     0.0f),
+        glm::vec3(interval,     -94.0f,     0.0f),
+        glm::vec3(-interval,    -94.0f,     interval),
+        glm::vec3(0.0f,     -94.0f,     interval),
+        glm::vec3(interval,     -94.0f,     interval),
+    };
+    for(auto offsetVec : offsetVecs)
+    {
+        glm::mat4 currentModel = glm::mat4(1.0f);
+        currentModel = glm::rotate(currentModel, 180.0f, glm::vec3(0.0, 1.0, 0.0));
+        currentModel = glm::scale(currentModel, glm::vec3(0.02f, 0.02f, 0.02f));
+        currentModel = glm::translate(currentModel, offsetVec);
+        models.push_back(lionModel);
+        model4models.push_back(currentModel);
+    }
+    #pragma endregion
+
+    #pragma region 生成灯光
     light = Light();
-    lights = vector<Light>(100);
+    lights = vector<Light>(9);
     if(scene_render_mode == USE_FORWARD_RENDERING)
     {
         lights.push_back(light);
@@ -29,6 +49,7 @@ Scene::Scene()
         lights.emplace_back(glm::vec3(-2.0, 2.5, 2.0));
         lights.emplace_back(glm::vec3(2.0, 2.5, -2.0));
         lights.emplace_back(glm::vec3(-2.0, 2.5, -2.0));
+        lights.resize(5);
     }
     if(scene_render_mode == USE_DEFERED_RENDERING)
     {
@@ -36,19 +57,22 @@ Scene::Scene()
         std::mt19937 gen(rd());
         std::uniform_real_distribution<double> dis(0.0, 1.0);
     
-        float delta = 1.0f;
+        float delta = 5.0f;
         float y = 2.5;
-        for(int i = 0; i < 10; i++)
+        for(int i = 0; i < 3; i++)
         {
             float x = -5 + delta * i;
-            for(int j = 0; j < 10; j++)
+            for(int j = 0; j < 3; j++)
             {
                 float z = -5 + delta * j;
                 glm::vec3 randomColor(dis(gen), dis(gen), dis(gen));
-                lights[i * 10 + j] = Light(glm::vec3(x, y, z), randomColor);
+                lights[i * 3 + j] = Light(glm::vec3(x, y, z), randomColor);
             }
         }
     }
+    #pragma endregion
+
+    #pragma region 初始化shader指针
     drawDepthShader = nullptr;
     drawModelShader = nullptr;
     drawPlaneShader = nullptr;
@@ -61,12 +85,15 @@ Scene::Scene()
     defer_lighting_pass_shader = nullptr;
     multi_light_plane_shader = nullptr;
     ssao_shader = nullptr;
+    #pragma endregion
+    
 }
 void Scene::SetSceneShader()
 {
     std::string vsPath = m_root_dir + "Shader/drawDepth_vs.glsl";
     std::string fsPath = m_root_dir + "Shader/drawDepth_fs.glsl";
     this->drawDepthShader = new Shader(vsPath.c_str(), fsPath.c_str());
+    
     /*this->drawModelShader = drawModelShader;
     this->drawPlaneShader = drawPlaneShader;*/
 }
@@ -91,14 +118,10 @@ void Scene::SetDepthMaps()
         for(int i = 0; i < lights.size(); i++)
         {
             glGenFramebuffers(1, &depthFBOs[i]);
-            //glBindTexture(GL_TEXTURE_2D, depthMapIDs[i]);
             glBindFramebuffer(GL_FRAMEBUFFER, depthFBOs[i]);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
                 GL_TEXTURE_2D, depthMapIDs[i], 0);
             glClear(GL_DEPTH_BUFFER_BIT);
-            //glBindTexture(GL_TEXTURE_2D, 0);
-            //glDrawBuffer(GL_NONE);
-            //glReadBuffer(GL_NONE);
         }
     }
 }
@@ -548,8 +571,8 @@ void Scene::PrepareGBuffer()
         
         glGenTextures(1, &gPositionTexture);
         glBindTexture(GL_TEXTURE_2D, gPositionTexture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 1920,
-            1061, 0, GL_RGB, GL_FLOAT, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 1920,
+            1061, 0, GL_RGBA, GL_FLOAT, NULL);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         
@@ -607,14 +630,13 @@ void Scene::PrepareGBuffer()
 }
 void Scene::DrawScene()
 {
-    DrawEnv();
     if(scene_render_mode == USE_FORWARD_RENDERING)
     {
         DrawPlaneDepth();
         DrawModelDepth();
     }
     glViewport(0, 0, 1920, 1061);
-    DrawModel();
+    DrawModels();
     DrawPlane();
     DrawEnv();
 }
@@ -639,32 +661,9 @@ void Scene::DrawEnv()
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glDepthFunc(GL_LESS);
 #pragma endregion
-    //测试辐照度贴图
     glViewport(0, 0, 1920, 1061);
-#pragma region 把prepare的cubemap当成天空盒渲染
-    /*
-    glDepthFunc(GL_LEQUAL);
-    glBindVertexArray(skyboxVAO);
-    if(drawSkyBoxShader == nullptr)
-    {
-        std::string vsPath = m_root_dir + "Shader/skybox_vs.glsl";
-        std::string fsPath = m_root_dir + "Shader/skybox_fs.glsl";
-        drawSkyBoxShader = new Shader(vsPath.c_str(), fsPath.c_str());
-    }
-    #pragma region 绘制天空盒
-    drawSkyBoxShader->use();
-    glm::mat4 view = glm::mat4(glm::mat3(Tool::camera.GetViewMatrix()));//取上三矩阵，消除平移
-    glm::mat4 perspective = Tool::camera.GetCameraPerspective();
-    drawSkyBoxShader->setMat4("view", view);
-    drawSkyBoxShader->setMat4("projection", perspective);
-    drawSkyBoxShader->setCubeTexture("skybox", static_cast<int>(convolutionIrradianceCubeMapID), 0);
-    
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    glDepthFunc(GL_LESS);
-    #pragma endregion*/
-#pragma endregion
 }
-void Scene::DrawModel()
+void Scene::DrawModels()
 {
     glViewport(0, 0, 1920, 1061);
     #pragma region 前向渲染
@@ -720,15 +719,29 @@ void Scene::DrawModel()
         /*glBindVertexArray(plane.m_VAO);
         defer_geometry_pass_shader->setMat4("model", plane.m_model);
         glDrawArrays(GL_TRIANGLES, 0, 6);*/
-        
-        //解绑所有texture
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         #pragma endregion
+        
         #pragma region 绘制SSAOtexture
+        ssao_shader->use();
         glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
         glClear(GL_COLOR_BUFFER_BIT);
+        ssao_shader->setTexture("gPositionDepth", gPositionTexture, 0);
+        ssao_shader->setTexture("gNormal", gNormalTexture, 1);
+        ssao_shader->setTexture("texNoise", noiseTexture, 2);
+
+        for(int i = 0; i < 64; i++)
+        {
+            ssao_shader->setVec3("samples[" + std::to_string(i) + "]", ssaoKernel[i]);
+        }
+        ssao_shader->setMat4("projection", Tool::camera.GetCameraPerspective());
+        glBindVertexArray(quadVAO);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        #pragma endregion
+        #pragma region blur SSAO纹理
         
         #pragma endregion
+        
         #pragma region 从GBuffer向默认FBO拷贝深度
         glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
         //glBindFramebuffer(GL_READ_FRAMEBUFFER_BINDING, gBuffer);
@@ -738,18 +751,21 @@ void Scene::DrawModel()
             1061, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         #pragma endregion
+        
         #pragma region lighting Pass
         glDepthFunc(GL_ALWAYS);
         glDepthMask(GL_FALSE);//禁止深度写入
         //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         defer_lighting_pass_shader->use();
-        defer_lighting_pass_shader->setTexture("G_FragPos", gPositionTexture, 6);
-        defer_lighting_pass_shader->setTexture("G_Normal", gNormalTexture, 7);
-        defer_lighting_pass_shader->setTexture("G_Albedo", gDiffuseTexture, 8);
-        defer_lighting_pass_shader->setTexture("G_AO", gAoTexture, 9);
-        defer_lighting_pass_shader->setCubeTexture("irradianceMap", convolutionIrradianceCubeMapID, 10);
-        defer_lighting_pass_shader->setCubeTexture("prefilterMap", prefilteredMapID, 11);
-        defer_lighting_pass_shader->setTexture("brdfLUT", brdfLookUpTextureID, 12);
+        defer_lighting_pass_shader->setTexture("G_FragPos", gPositionTexture, 0);
+        defer_lighting_pass_shader->setTexture("G_Normal", gNormalTexture, 1);
+        defer_lighting_pass_shader->setTexture("G_Albedo", gDiffuseTexture, 2);
+        //defer_lighting_pass_shader->setTexture("G_AO", gAoTexture, 3);
+        defer_lighting_pass_shader->setTexture("G_AO", ssaoColorTexture, 3);
+        
+        defer_lighting_pass_shader->setCubeTexture("irradianceMap", convolutionIrradianceCubeMapID, 4);
+        defer_lighting_pass_shader->setCubeTexture("prefilterMap", prefilteredMapID, 5);
+        defer_lighting_pass_shader->setTexture("brdfLUT", brdfLookUpTextureID, 6);
         defer_lighting_pass_shader->setVec3("cameraPos", Tool::camera.Position);
         for(int i = 0; i < lights.size(); i++)
         {
@@ -781,7 +797,7 @@ void Scene::DrawPlaneDepth()
         glBindFramebuffer(GL_FRAMEBUFFER, depthFBOs[i]);
         glClear(GL_DEPTH_BUFFER_BIT);
         drawDepthShader->setMat4("lightVP", lights[i].LightVP);
-        glBindVertexArray(plane.m_VAO);
+        glBindVertexArray(plane.meshes[0].VAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -799,9 +815,10 @@ void Scene::DrawModelDepth()
         for(int i = 0; i < models.size(); i++)
         {
             drawDepthShader->setMat4("model", model4models[i]);
-            for(auto mesh : models[i].meshes)
+            if(models[i].meshes.size() >= 1)
             {
-                //逐模型逐网格遍历
+                auto size = models[i].meshes.size();
+                auto mesh = models[i].meshes[size - 1];
                 glBindVertexArray(mesh.VAO);
                 glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(mesh.indices.size()), GL_UNSIGNED_INT, 0);
             }
@@ -822,13 +839,29 @@ void Scene::DrawPlane()
             string fsPath = m_root_dir + "Shader/plane_fs.glsl";
             drawPlaneShader = new Shader(vsPath.c_str(), fsPath.c_str());
         }
-        if(plane.m_textureID == -1)
-        {
-            plane.loadGenModelTexture();
-        }
-        glBindVertexArray(plane.m_VAO);
+        glBindVertexArray(plane.meshes[0].VAO);
         drawPlaneShader->use();
-        drawPlaneShader->setTexture("planeTexture", plane.m_textureID, 1);
+
+        Mesh &plane_mesh_ref = plane.meshes[0];
+        vector<Texture> &textures_ref = plane_mesh_ref.textures;
+        if(plane_mesh_ref.hasDiffuse())
+        {
+            drawPlaneShader->setTexture("texture_diffuse1", textures_ref[0].id, 0);
+        }
+        if(plane_mesh_ref.hasNormal())
+        {
+            drawPlaneShader->setTexture("texture_normal1", textures_ref[1].id, 1);
+        }
+        if(plane_mesh_ref.hasMaskMap())
+        {
+            drawPlaneShader->setTexture("texture_maskmap", textures_ref[2].id, 2);
+        }
+        if(plane_mesh_ref.hasAO())
+        {
+            drawPlaneShader->setTexture("texture_AO1", textures_ref[3].id, 3);
+        }
+        //setTextures
+        
         drawPlaneShader->setMat4("model", plane.m_model);
         glm::mat4 view = Tool::camera.GetViewMatrix();
         glm::mat4 perspective = Tool::camera.GetCameraPerspective();
@@ -853,18 +886,14 @@ void Scene::DrawPlane()
             string fsPath = m_root_dir + "Shader/multilight_plane_fs.glsl";
             multi_light_plane_shader = new Shader(vsPath.c_str(), fsPath.c_str());
         }
-        if(plane.m_textureID == -1)
-        {
-            plane.loadGenModelTexture();
-        }
-        glBindVertexArray(plane.m_VAO);
+        glBindVertexArray(plane.meshes[0].VAO);
         multi_light_plane_shader->use();
         for(int i = 0; i < lights.size(); i++)
         {
             multi_light_plane_shader->setVec3("lightPos[" + std::to_string(i) + "]", lights[i].Position);
             multi_light_plane_shader->setVec3("lightColor[" + std::to_string(i) + "]", lights[i].color);
         }
-        multi_light_plane_shader->setTexture("planeTexture", plane.m_textureID, 1);
+        multi_light_plane_shader->setTexture("planeTexture", plane.meshes[0].textures[0].id, 1);
         multi_light_plane_shader->setMat4("model", plane.m_model);
         glm::mat4 view = Tool::camera.GetViewMatrix();
         glm::mat4 perspective = Tool::camera.GetCameraPerspective();

@@ -18,7 +18,7 @@ public:
     std::vector<glm::mat4> model4models; 
     std::vector<Mesh*> scene_meshes;
     glm::vec3 CameraInitialPosition;
-    GeneratedModel plane;
+    Model plane;
 
     //GLuint depthFBO = 0;
     std::vector<GLuint> depthFBOs;
@@ -78,7 +78,7 @@ public:
     void DrawPlane();
     void DrawPlaneDepth();
     void DrawScene2GBuffer();
-    void DrawModel();
+    void DrawModels();
     void DrawModelDepth();
     void DrawSkyBox(Camera&);
     void DrawEnv();

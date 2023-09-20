@@ -8,7 +8,7 @@ in VS_OUT{
     vec4 FragPosInLightSpace[5];
 } fs_in;
 
-uniform sampler2D planeTexture;
+uniform sampler2D texture_diffuse1;
 uniform sampler2D shadowMap[5];
 uniform vec3 lightPos[5];
 uniform vec3 viewPos;
@@ -30,7 +30,7 @@ float calculate_shadow(int i)
 }
 void main()
 {    
-    vec3 textureColor = texture(planeTexture, fs_in.uv).xyz;
+    vec3 textureColor = texture(texture_diffuse1, fs_in.uv).xyz;
     float shadow = 0.0;
     float diffuse = 0.0;
     float spec = 0.0;
